@@ -1,243 +1,331 @@
-
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>G-CORE | Omni-Vision Universal</title>
+    <title>G-CORE | Omni-Vision Command</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=JetBrains+Mono:wght@400;700&display=swap');
         
         body {
-            background-color: #000;
+            background-color: #02040a;
             color: #00f2ff;
             font-family: 'JetBrains Mono', monospace;
             margin: 0;
             overflow: hidden;
             height: 100vh;
+            user-select: none;
         }
 
-        .font-hud { font-family: 'Orbitron', sans-serif; }
+        .hud-font { font-family: 'Orbitron', sans-serif; }
 
-        /* Scanning Reticle Animation */
-        .reticle {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 260px;
-            height: 260px;
-            border: 1px solid rgba(0, 242, 255, 0.2);
+        /* Spaceship HUD Grid */
+        .hud-grid {
+            background-image: 
+                linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
         }
 
-        .scan-bar {
+        /* Animated Scanning Laser */
+        .laser {
             width: 100%;
             height: 2px;
-            background: linear-gradient(to right, transparent, #00f2ff, transparent);
+            background: #00f2ff;
             position: absolute;
-            top: 0;
-            box-shadow: 0 0 15px #00f2ff;
-            animation: scanLoop 3s ease-in-out infinite;
+            z-index: 20;
+            box-shadow: 0 0 20px #00f2ff, 0 0 40px #00f2ff;
+            animation: scanMove 4s ease-in-out infinite;
         }
 
-        @keyframes scanLoop {
-            0%, 100% { top: 5%; opacity: 0; }
-            50% { top: 95%; opacity: 1; }
+        @keyframes scanMove {
+            0%, 100% { top: 10%; opacity: 0; }
+            50% { top: 85%; opacity: 1; }
         }
 
-        .glass {
-            background: rgba(5, 5, 5, 0.95);
-            backdrop-filter: blur(25px);
-            border-top: 2px solid rgba(0, 242, 255, 0.3);
+        .glass-ui {
+            background: rgba(5, 10, 20, 0.9);
+            backdrop-filter: blur(15px);
+            border-top: 1px solid rgba(0, 242, 255, 0.3);
         }
 
-        /* Mobile optimization for S20 Ultra */
         video {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            filter: brightness(1.1) contrast(1.1);
+            filter: contrast(1.1) brightness(1.2);
         }
 
-        .corner {
+        .reticle-bracket {
             position: absolute;
-            width: 30px;
-            height: 30px;
+            width: 50px;
+            height: 50px;
             border-color: #00f2ff;
+            opacity: 0.5;
+        }
+
+        .glow-text {
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.7);
+        }
+
+        /* Pulse for Active Voice */
+        .voice-pulse {
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.5; }
         }
     </style>
 </head>
 <body class="flex flex-col">
 
-    <!-- UNIVERSAL KEY AUTH (LocalStorage Only) -->
-    <div id="gatekeeper" class="fixed inset-0 z-[100] bg-black flex items-center justify-center p-6 transition-all duration-1000">
-        <div class="w-full max-w-sm p-8 border-2 border-cyan-900 bg-slate-950 rounded-[2rem] text-center shadow-[0_0_60px_rgba(0,242,255,0.1)]">
-            <div class="mb-6 animate-pulse">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="mx-auto"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    <!-- MASTER ACCESS OVERLAY -->
+    <div id="auth-overlay" class="fixed inset-0 z-[100] bg-slate-950 flex items-center justify-center p-6 transition-all duration-1000 hud-grid">
+        <div class="w-full max-w-sm p-10 border-2 border-cyan-500/40 bg-black/90 rounded-[2.5rem] text-center backdrop-blur-xl shadow-2xl">
+            <div class="mb-8">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="mx-auto text-cyan-400"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
             </div>
-            <h1 class="text-xl font-bold font-hud mb-1 tracking-widest">OMNI_LINK</h1>
-            <p class="text-[9px] text-cyan-800 uppercase tracking-[0.5em] mb-8">Universal API Integration</p>
+            <h1 class="text-2xl font-bold hud-font mb-2 tracking-[0.2em] glow-text">G-CORE OMNI</h1>
+            <p class="text-[10px] text-cyan-700 uppercase tracking-[0.5em] mb-10">Universal Ship Interface</p>
             
-            <input type="password" id="master-key" placeholder="PASTE_ANY_GEMINI_KEY" 
-                class="w-full bg-black border border-cyan-900 p-4 rounded-2xl text-cyan-400 text-center mb-6 focus:border-cyan-400 outline-none font-mono text-xs">
+            <input type="password" id="master-key-input" placeholder="ENTER_API_KEY_HERE" 
+                class="w-full bg-black border border-cyan-500/30 p-5 rounded-2xl text-cyan-400 text-center mb-6 focus:border-cyan-400 outline-none font-mono text-xs transition-all">
             
-            <button onclick="unlock()" class="w-full py-4 bg-cyan-500 text-black font-bold rounded-2xl uppercase font-hud text-xs tracking-widest shadow-lg shadow-cyan-500/20 active:scale-95 transition-all">
-                Authorize Core
+            <button onclick="saveMasterKey()" class="w-full py-5 bg-cyan-500 text-black font-bold rounded-2xl uppercase hud-font text-xs tracking-widest shadow-[0_0_30px_rgba(6,182,212,0.4)] active:scale-95 transition-all">
+                Initialize Systems
             </button>
-            <p class="mt-6 text-[8px] text-gray-700 italic">This platform accepts any valid Gemini API Key.<br>Encryption: Local Browser Cache (Private).</p>
+            <p class="mt-8 text-[9px] text-gray-700 italic">Compatible with all Gemini-Class Keys.<br>Local Vault Encryption: Active.</p>
         </div>
     </div>
 
-    <!-- SENSOR FEED -->
-    <div class="relative flex-grow h-[60vh] bg-black">
+    <!-- SHIP VIEWPORT -->
+    <div class="relative flex-grow h-[55vh] bg-black overflow-hidden">
         <video id="v" autoplay playsinline muted></video>
-        <canvas id="c" class="hidden"></canvas>
+        <canvas id="cap" class="hidden"></canvas>
 
         <!-- HUD ELEMENTS -->
         <div class="absolute inset-0 pointer-events-none">
-            <div class="reticle">
-                <div class="scan-bar"></div>
-                <div class="corner top-0 left-0 border-t-4 border-l-4"></div>
-                <div class="corner top-0 right-0 border-t-4 border-r-4"></div>
-                <div class="corner bottom-0 left-0 border-b-4 border-l-4"></div>
-                <div class="corner bottom-0 right-0 border-b-4 border-r-4"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64">
+                <div class="laser"></div>
+                <div class="reticle-bracket top-0 left-0 border-t-2 border-l-2"></div>
+                <div class="reticle-bracket top-0 right-0 border-t-2 border-r-2"></div>
+                <div class="reticle-bracket bottom-0 left-0 border-b-2 border-l-2"></div>
+                <div class="reticle-bracket bottom-0 right-0 border-b-2 border-r-2"></div>
+                
+                <!-- Crosshairs -->
+                <div class="absolute top-1/2 left-0 w-full h-[1px] bg-cyan-500/10"></div>
+                <div class="absolute left-1/2 top-0 h-full w-[1px] bg-cyan-500/10"></div>
             </div>
 
             <!-- SHIP TELEMETRY -->
-            <div class="absolute top-8 left-8 text-[9px] space-y-1 opacity-60">
-                <div class="text-cyan-400">STATUS: INTERNET_CONNECTED</div>
-                <div>LENS: S20_ULTRA_OMNI</div>
-                <div>PROTOCOL: 0.9.32</div>
+            <div class="absolute top-10 left-10 text-[9px] space-y-2 opacity-60 font-mono">
+                <div class="flex items-center gap-2"><div class="w-2 h-2 bg-green-500 rounded-full animate-ping"></div> COMMS_LINK: ONLINE</div>
+                <div>OPTIC_SENSOR: 1080p_ULTRA</div>
+                <div>NEURAL_STATE: LISTENING</div>
+            </div>
+
+            <div class="absolute bottom-10 right-10 text-[9px] text-right opacity-60 font-mono">
+                <div>G-CORE_X1_OS</div>
+                <div>PWR: 88%</div>
+                <div>TEMP: 304K</div>
             </div>
         </div>
 
-        <!-- PROCESSING OVERLAY -->
-        <div id="loader" class="hidden absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-50">
-            <div class="w-14 h-14 border-2 border-cyan-900 rounded-full flex items-center justify-center">
-                <div class="w-10 h-10 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+        <!-- ANALYSIS OVERLAY -->
+        <div id="load-overlay" class="hidden absolute inset-0 bg-slate-950/80 flex flex-col items-center justify-center z-50">
+            <div class="w-24 h-24 border-2 border-cyan-900 rounded-full flex items-center justify-center relative">
+                <div class="absolute inset-0 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-cyan-400 animate-pulse"><path d="M12 1v22M5 12h14M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/></svg>
             </div>
-            <p class="mt-6 text-[10px] tracking-[0.5em] animate-pulse text-cyan-400 font-bold">REASONING...</p>
+            <p class="mt-8 text-[11px] tracking-[0.5em] animate-pulse text-cyan-400 font-bold uppercase hud-font">Synthesizing Report...</p>
         </div>
     </div>
 
-    <!-- COMMAND CONSOLE -->
-    <div class="flex-grow glass p-6 flex flex-col overflow-hidden">
+    <!-- CONTROL CONSOLE -->
+    <div class="flex-grow glass-ui p-8 flex flex-col overflow-hidden">
         
-        <div id="cmd-idle" class="flex flex-col items-center justify-center h-full">
-            <div class="text-center mb-8">
-                <h1 class="text-xl font-bold tracking-[0.3em] text-white font-hud">G-CORE OMNI</h1>
-                <p class="text-[9px] text-cyan-900 uppercase tracking-widest">Multi-Object Neural Processor</p>
+        <div id="ui-idle" class="flex flex-col items-center justify-center h-full">
+            <div class="text-center mb-10">
+                <h1 class="text-2xl font-bold tracking-[0.4em] text-white hud-font glow-text">G-CORE OMNI</h1>
+                <p class="text-[10px] text-cyan-900 uppercase tracking-widest">Neural Recognition & Voice Synth</p>
             </div>
             
-            <button onclick="executeScan()" class="w-full max-w-sm py-5 border border-cyan-500/50 text-cyan-400 font-bold rounded-3xl flex items-center justify-center gap-3 active:scale-95 transition-all uppercase tracking-[0.3em] font-hud text-xs hover:bg-cyan-500/5">
-                Execute Analysis
+            <button onclick="runOmniScan()" class="w-full max-w-sm py-6 bg-transparent border-2 border-cyan-500 text-cyan-400 font-bold rounded-3xl flex items-center justify-center gap-4 active:scale-95 transition-all uppercase tracking-[0.3em] hud-font text-sm hover:bg-cyan-500/10 shadow-lg">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                Initiate Analysis
             </button>
             
-            <button onclick="localStorage.removeItem('omni_key'); location.reload();" class="mt-10 text-[8px] text-gray-800 uppercase tracking-widest border-b border-transparent hover:border-red-900">Reset Neural Link</button>
+            <button onclick="localStorage.removeItem('omni_key'); location.reload();" class="mt-12 text-[8px] text-slate-700 uppercase tracking-widest hover:text-red-500">Purge Memory Link</button>
         </div>
 
-        <!-- OUTPUT REPORT -->
-        <div id="cmd-report" class="hidden flex flex-col h-full overflow-hidden">
-            <div class="flex justify-between items-center mb-4 border-b border-cyan-900/20 pb-3">
-                <span class="text-[10px] font-bold tracking-widest text-white italic uppercase">Data Identification Report</span>
-                <button onclick="abort()" class="text-[9px] text-cyan-600 font-bold">ABORT</button>
+        <!-- REPORT SCREEN -->
+        <div id="ui-report" class="hidden flex flex-col h-full overflow-hidden">
+            <div class="flex justify-between items-center mb-6 border-b border-cyan-900/40 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-3 h-3 bg-cyan-500 animate-pulse"></div>
+                    <span class="text-xs font-bold tracking-[0.1em] text-white uppercase hud-font">Neural Analysis Log</span>
+                </div>
+                <button onclick="abortReport()" class="text-[10px] text-cyan-700 font-bold uppercase hover:text-cyan-400">Dismiss</button>
             </div>
             
-            <div class="flex-1 overflow-y-auto" id="report-view">
-                <div id="output-text" class="text-[11px] leading-relaxed text-gray-400"></div>
+            <!-- Voice Activity Indicator -->
+            <div id="voice-indicator" class="mb-4 p-3 border border-cyan-500/20 rounded-xl flex items-center gap-4 bg-cyan-500/5">
+                <div class="voice-pulse w-3 h-3 bg-cyan-400 rounded-full"></div>
+                <span class="text-[10px] uppercase font-bold text-cyan-300">Neural Audio Stream Active</span>
+                <button onclick="repeatVoice()" class="ml-auto p-1 text-cyan-400"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>
             </div>
 
-            <div class="mt-4 pt-3 border-t border-cyan-900/20 flex gap-3">
-                <button onclick="saveLog()" class="flex-1 py-3 bg-cyan-950/20 text-[9px] text-cyan-500 rounded-xl border border-cyan-900/50 uppercase font-bold">Save Log</button>
-                <button onclick="webSearch()" class="flex-1 py-3 bg-cyan-950/20 text-[9px] text-cyan-500 rounded-xl border border-cyan-900/50 uppercase font-bold">Datasheet</button>
+            <div class="flex-1 overflow-y-auto pr-2 custom-scroll" id="report-text-container">
+                <div id="report-text" class="text-xs leading-relaxed text-gray-400 space-y-4"></div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-cyan-900/40 flex gap-4">
+                <button onclick="searchDatasheet()" class="flex-1 py-4 bg-slate-900/50 text-[10px] text-cyan-500 rounded-2xl border border-cyan-900/50 uppercase font-bold tracking-[0.2em] hover:bg-cyan-900/20">Query Database</button>
             </div>
         </div>
     </div>
 
     <script>
         const v = document.getElementById('v');
-        const c = document.getElementById('c');
-        const gate = document.getElementById('gatekeeper');
-        const idle = document.getElementById('cmd-idle');
-        const rpt = document.getElementById('cmd-report');
-        const ld = document.getElementById('loader');
-        const out = document.getElementById('output-text');
+        const cap = document.getElementById('cap');
+        const gate = document.getElementById('auth-overlay');
+        const uiIdle = document.getElementById('ui-idle');
+        const uiReport = document.getElementById('ui-report');
+        const loader = document.getElementById('load-overlay');
+        const reportText = document.getElementById('report-text');
+
+        let lastReport = "";
+        let audioContext;
 
         window.onload = () => {
-            const k = localStorage.getItem('omni_key');
-            if (k) {
+            const key = localStorage.getItem('omni_key');
+            if (key) {
                 gate.style.opacity = '0';
                 setTimeout(() => gate.style.display = 'none', 1000);
-                init();
+                startCamera();
             }
         };
 
-        function unlock() {
-            const val = document.getElementById('master-key').value.trim();
+        function saveMasterKey() {
+            const val = document.getElementById('master-key-input').value.trim();
             if (val) { localStorage.setItem('omni_key', val); location.reload(); }
         }
 
-        async function init() {
+        async function startCamera() {
             try {
-                const s = await navigator.mediaDevices.getUserMedia({
+                const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
                 });
-                v.srcObject = s;
-            } catch (e) { alert("ERROR: Sensor initialization failed."); }
+                v.srcObject = stream;
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            } catch (err) { alert("ERROR: Sensor initialization failed."); }
         }
 
-        async function executeScan() {
-            const k = localStorage.getItem('omni_key');
-            ld.classList.remove('hidden');
+        async function runOmniScan() {
+            const key = localStorage.getItem('omni_key');
+            loader.classList.remove('hidden');
             
-            c.width = v.videoWidth; c.height = v.videoHeight;
-            c.getContext('2d').drawImage(v, 0, 0);
-            const base64 = c.toDataURL('image/png').split(',')[1];
+            cap.width = v.videoWidth; cap.height = v.videoHeight;
+            cap.getContext('2d').drawImage(v, 0, 0);
+            const b64 = cap.toDataURL('image/png').split(',')[1];
 
-            // This prompt is optimized for any component/object identification
-            const p = `ACT AS G-CORE UNIVERSAL EXPERT. 
-            SCAN OBJECT. IDENTIFY PRECISELY. 
-            REASONING: If electronics (MCUs, Gates, Passives), give pinout/logic. 
-            If everyday object, give specs and material feel.
-            FORMAT: IDENTITY: [Name] | TYPE: [Category] | DETAILS: [Bullet points of function/feel] | LOGIC: [If applicable]`;
+            // 1. VISION REASONING
+            const visionUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`;
+            const visionPayload = {
+                contents: [{
+                    parts: [
+                        { text: "Identify this component or object. Provide: 1. Identity, 2. Brief function/use, 3. Key specs if visible. Use technical language but keep it short." },
+                        { inlineData: { mimeType: "image/png", data: b64 } }
+                    ]
+                }]
+            };
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${k}`, {
+                const vRes = await fetch(visionUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: p }, { inlineData: { mimeType: "image/png", data: base64 } }] }] })
+                    body: JSON.stringify(visionPayload)
                 });
-                const d = await res.json();
-                if (d.error) throw new Error(d.error.message);
+                const vData = await vRes.json();
+                if (vData.error) throw new Error(vData.error.message);
 
-                out.innerHTML = d.candidates[0].content.parts[0].text
+                const text = vData.candidates[0].content.parts[0].text;
+                lastReport = text;
+
+                // 2. VOICE SYNTHESIS
+                const speechText = `Scanning complete. Identified: ${text.split('\n')[0]}. ${text.split('\n')[1]}`;
+                await playNeuralVoice(speechText, key);
+
+                // 3. UI DISPLAY
+                reportText.innerHTML = text
                     .replace(/\n/g, '<br>')
-                    .replace(/\*\*(.*?)\*\*/g, '<span class="text-cyan-200">$1</span>');
+                    .replace(/\*\*(.*?)\*\*/g, '<span class="text-cyan-300 font-bold">$1</span>');
 
-                idle.classList.add('hidden');
-                rpt.classList.remove('hidden');
-            } catch (e) { 
-                alert("PROTOCOL_FAULT: " + e.message); 
-                if(e.message.includes("API_KEY_INVALID")) { localStorage.removeItem('omni_key'); location.reload(); }
-            } finally { ld.classList.add('hidden'); }
+                uiIdle.classList.add('hidden');
+                uiReport.classList.remove('hidden');
+            } catch (err) {
+                alert("PROTOCOL_FAULT: " + err.message);
+                if (err.message.includes('API_KEY_INVALID')) { localStorage.removeItem('omni_key'); location.reload(); }
+            } finally { loader.classList.add('hidden'); }
         }
 
-        function abort() { rpt.classList.add('hidden'); idle.classList.remove('hidden'); out.innerHTML = ""; }
-        
-        function saveLog() {
-            const t = out.innerText;
-            const b = document.createElement('textarea'); b.value = t; document.body.appendChild(b); b.select();
-            document.execCommand('copy'); document.body.removeChild(b);
-            alert("SUCCESS: Analysis data saved to local log (clipboard).");
+        async function playNeuralVoice(text, key) {
+            const ttsUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`;
+            const ttsPayload = {
+                contents: [{ parts: [{ text: `Ship Computer voice: ${text}` }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: { prebuiltVoiceConfig: { voiceName: "Kore" } }
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch(ttsUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(ttsPayload)
+                });
+                const data = await response.json();
+                const pcmBase64 = data.candidates[0].content.parts[0].inlineData.data;
+                
+                // Convert PCM16 Base64 to Float32 for Web Audio
+                const binary = atob(pcmBase64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                
+                const pcm16 = new Int16Array(bytes.buffer);
+                const float32 = new Float32Array(pcm16.length);
+                for (let i = 0; i < pcm16.length; i++) float32[i] = pcm16[i] / 32768.0;
+
+                const buffer = audioContext.createBuffer(1, float32.length, 24000);
+                buffer.copyToChannel(float32, 0);
+                const source = audioContext.createBufferSource();
+                source.buffer = buffer;
+                source.connect(audioContext.destination);
+                source.start();
+            } catch (e) { console.error("AUDIO_ERROR:", e); }
         }
 
-        function webSearch() {
-            const lines = out.innerText.split('|');
-            const target = lines[0].replace('IDENTITY:', '').trim();
-            window.open(`https://www.google.com/search?q=${encodeURIComponent(target + " specifications datasheet")}`, '_blank');
+        function repeatVoice() {
+            const k = localStorage.getItem('omni_key');
+            if (lastReport) playNeuralVoice(lastReport, k);
+        }
+
+        function abortReport() { uiReport.classList.add('hidden'); uiIdle.classList.remove('hidden'); reportText.innerHTML = ""; }
+
+        function searchDatasheet() {
+            const target = lastReport.split('\n')[0] || "Electronic Component";
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(target + " official datasheet pdf")}`, '_blank');
         }
     </script>
 </body>
 </html>
+
+```
 
